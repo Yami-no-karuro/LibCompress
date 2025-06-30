@@ -11,4 +11,5 @@ In computer science and information theory, a **Huffman code** is a particular t
 **Huffman coding**, introduced by **David A. Huffman** in 1952, remains one of the most efficient and widely used algorithms for **lossless** data compression.  
 Its strength lies in assigning shorter binary codes to more frequent symbols, thereby reducing the overall size of the encoded data.
 
-Despite its age, **Huffman coding** is still relevant today, forming the basis of compression techniques used in formats like **DEFLATE**.
+Despite its age, **Huffman coding** is still relevant today, forming the basis of compression techniques used in formats like **DEFLATE**.  
+(More on [Huffman Coding](https://en.wikipedia.org/wiki/Huffman_coding) on [Wikipedia](https://en.wikipedia.org))
