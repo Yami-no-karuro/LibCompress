@@ -4,6 +4,20 @@
 
 #include "huffman.h"
 
+static void huf_free_heap(MinHeap *heap) {
+    free(heap->array);
+    free(heap);
+}
+
+static void huf_free_tree(MinHNode *node) {
+    if (!node) 
+        return;
+
+    huf_free_tree(node->left);
+    huf_free_tree(node->right);
+    free(node);
+}
+
 static MinHNode *huf_new_node(char item, unsigned freq) {
     MinHNode *node = (MinHNode *)malloc(sizeof(MinHNode));
     node->left = node->right = NULL;
@@ -95,7 +109,9 @@ static MinHNode *huf_build_huffman_tree(unsigned freq[256]) {
         huf_insert_min_heap(heap, top);
     }
 
-    return huf_extract_min(heap);
+    MinHNode *root = huf_extract_min(heap);
+    huf_free_heap(heap);
+    return root;
 }
 
 static void huf_build_code_table(MinHNode *root, char *code, int top, char codes[256][MAX_TREE_HT]) {
@@ -140,7 +156,9 @@ void huf_compress(const char *input_file, const char *output_file) {
         freq[(unsigned char)c]++;
 
     rewind(in);
+
     fwrite(freq, sizeof(unsigned), 256, out);
+    fwrite(&size, sizeof(long), 1, out);
 
     MinHNode *root = huf_build_huffman_tree(freq);
     char codes[256][MAX_TREE_HT] = {{0}};
@@ -172,6 +190,8 @@ void huf_compress(const char *input_file, const char *output_file) {
         fputc(buf, out);
     }
 
+    huf_free_tree(root);
+
     fclose(in);
     fclose(out);
 }
@@ -197,20 +217,27 @@ void huf_decompress(const char *input_file, const char *output_file) {
     unsigned freq[256];
     fread(freq, sizeof(unsigned), 256, in);
 
+    long original_size;
+    fread(&original_size, sizeof(long), 1, in);
+
     MinHNode *root = huf_build_huffman_tree(freq);
     MinHNode *curr = root;
 
     int byte;
-    while ((byte = fgetc(in)) != EOF) {
-        for (int i = 7; i >= 0; --i) {
+    long written = 0;
+    while ((byte = fgetc(in)) != EOF && written < original_size) {
+        for (int i = 7; i >= 0 && written < original_size; --i) {
             int bit = (byte >> i) & 1;
             curr = bit ? curr->right : curr->left;
             if (huf_is_leaf(curr)) {
                 fputc(curr->item, out);
                 curr = root;
+                written++;
             }
         }
     }
+
+    huf_free_tree(root);
 
     fclose(in);
     fclose(out);
